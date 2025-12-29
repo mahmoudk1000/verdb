@@ -11,3 +11,9 @@ type Project struct {
 	Description string    `json:"description,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
 }
+
+func (p *Projects) InitializeMap() {
+	if p.Project == nil {
+		p.Project = make(map[string]Project)
+	}
+}

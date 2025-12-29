@@ -1,9 +1,7 @@
 package project
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,9 +12,9 @@ import (
 
 func createCommand() *cobra.Command {
 	var (
-		link        string
-		description string
-		configPath  string
+		link          string
+		description   string
+		configBuilder *utils.ConfigBuilder[models.Projects]
 	)
 
 	create := &cobra.Command{
@@ -25,63 +23,51 @@ func createCommand() *cobra.Command {
 		Short:   "add a new application to the project",
 		Args:    cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			path, err := utils.ProjectConfigFilePath()
+			configBuilder = utils.NewConfigBuilder(projectsFileName, models.Projects{})
+			err := configBuilder.BuildConfigDir()
 			if err != nil {
 				return err
 			}
-			configPath = path
 			return nil
 		},
 	}
+
+	create.SilenceUsage = true
 
 	flags := create.Flags()
 	flags.StringVarP(&link, "link", "l", "", "link to the project")
 	flags.StringVarP(&description, "description", "d", "", "description of the application")
 
 	create.RunE = func(cmd *cobra.Command, args []string) error {
-		err := createJSONProject(configPath, args[0], link, description)
+		err := createJSONProject(configBuilder, args[0], link, description)
 		if err != nil {
 			return fmt.Errorf("failed to create project: %w", err)
 		}
+		fmt.Printf("Project '%s' was created\n", args[0])
 		return nil
 	}
 
 	return create
 }
 
-func createJSONProject(path, name, link, desc string) error {
-	var p models.Projects
-	p.Project = make(map[string]models.Project)
+func createJSONProject(
+	configBuilder *utils.ConfigBuilder[models.Projects],
+	name, link, desc string,
+) error {
+	projects := configBuilder.Model()
 
-	if f, err := os.Open(path); err == nil {
-		defer f.Close()
-		decoder := json.NewDecoder(f)
-		_ = decoder.Decode(&p)
+	if _, exists := projects.Project[name]; exists {
+		return fmt.Errorf("project '%s' already exists", name)
 	}
 
-	p.Project[name] = models.Project{
+	projects.Project[name] = models.Project{
 		Link:        link,
 		Description: desc,
 		CreatedAt:   time.Now().UTC(),
 	}
 
-	f, err := os.OpenFile(
-		path,
-		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
-		0644,
-	)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			fmt.Println("Error closing file:", err)
-		}
-	}()
-
-	encoder := json.NewEncoder(f)
-	if err := encoder.Encode(p); err != nil {
-		return err
+	if err := configBuilder.Save(); err != nil {
+		return fmt.Errorf("failed to save project: %w", err)
 	}
 
 	return nil

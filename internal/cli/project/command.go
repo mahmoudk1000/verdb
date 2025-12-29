@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const projectsFileName string = "projects.json"
+
 func NewCommand() *cobra.Command {
 	project := &cobra.Command{
 		Use:     "project",
