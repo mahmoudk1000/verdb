@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mahmoudk1000/verdb/internal/models"
-	"github.com/mahmoudk1000/verdb/internal/utils"
+	"github.com/mahmoudk1000/relen/internal/models"
+	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
 func NewShowCommand() *cobra.Command {

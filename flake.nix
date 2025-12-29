@@ -26,7 +26,7 @@
         {
           default = pkgs.buildGoModule {
             inherit version;
-            pname = "verdb";
+            pname = "relen";
             src = ./.;
             subPackages = [
               "cmd/..."

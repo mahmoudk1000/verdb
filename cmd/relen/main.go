@@ -8,13 +8,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/mahmoudk1000/verdb/internal/cli/application"
-	"github.com/mahmoudk1000/verdb/internal/cli/project"
+	"github.com/mahmoudk1000/relen/internal/cli/application"
+	"github.com/mahmoudk1000/relen/internal/cli/project"
 )
 
 func main() {
-	var verdb = &cobra.Command{
-		Use:   "verdb",
+	var relen = &cobra.Command{
+		Use:   "relen",
 		Short: "A serious, well-scoped versioning tool.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmd.Help(); err != nil {
@@ -24,10 +24,10 @@ func main() {
 		},
 	}
 
-	verdb.AddCommand(project.NewProjectCommand())
-	verdb.AddCommand(application.NewApplicationCommand())
+	relen.AddCommand(project.NewProjectCommand())
+	relen.AddCommand(application.NewApplicationCommand())
 
-	if err := verdb.Execute(); err != nil {
+	if err := relen.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

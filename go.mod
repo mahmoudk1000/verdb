@@ -1,4 +1,4 @@
-module github.com/mahmoudk1000/verdb
+module github.com/mahmoudk1000/relen
 
 go 1.24.0
 
