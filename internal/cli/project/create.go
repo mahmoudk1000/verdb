@@ -39,7 +39,7 @@ func NewCreateCommand() *cobra.Command {
 
 	create.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
-		err := createJSONProject(configBuilder, args[0], link, description)
+		err := createJSONProject(args[0], link, description, configBuilder)
 		if err != nil {
 			return fmt.Errorf("failed to create project: %w", err)
 		}
@@ -51,10 +51,10 @@ func NewCreateCommand() *cobra.Command {
 }
 
 func createJSONProject(
-	configBuilder *utils.ConfigBuilder[models.Projects],
 	name, link, desc string,
+	cb *utils.ConfigBuilder[models.Projects],
 ) error {
-	projects := configBuilder.Model()
+	projects := cb.Model()
 
 	for _, p := range projects.Project {
 		if p.Name == name {
@@ -71,9 +71,9 @@ func createJSONProject(
 	}
 
 	projects.Project = append(projects.Project, p)
-	configBuilder.SetModel(projects)
+	cb.SetModel(projects)
 
-	if err := configBuilder.Save(); err != nil {
+	if err := cb.Save(); err != nil {
 		return fmt.Errorf("failed to save project: %w", err)
 	}
 

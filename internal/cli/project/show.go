@@ -43,16 +43,16 @@ func NewShowCommand() *cobra.Command {
 		switch {
 		case jsonFlag:
 			p, err = showProject(
-				configBuilder,
 				args[0],
+				configBuilder,
 				func(data any) (string, error) {
 					return utils.FormatJSON(data)
 				},
 			)
 		default:
 			p, err = showProject(
-				configBuilder,
 				args[0],
+				configBuilder,
 				func(data any) (string, error) {
 					return utils.Format(data)
 				},
@@ -71,11 +71,11 @@ func NewShowCommand() *cobra.Command {
 }
 
 func showProject(
-	configBuilder *utils.ConfigBuilder[models.Projects],
 	name string,
+	cb *utils.ConfigBuilder[models.Projects],
 	output func(any) (string, error),
 ) (string, error) {
-	projects := configBuilder.Model()
+	projects := cb.Model()
 
 	for _, p := range projects.Project {
 		if p.Name == name {

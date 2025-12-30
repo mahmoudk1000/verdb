@@ -24,6 +24,7 @@ func NewProjectCommand() *cobra.Command {
 	}
 
 	project.AddCommand(NewCreateCommand())
+	project.AddCommand(NewDeleteCommand())
 	project.AddCommand(NewShowCommand())
 
 	return project
