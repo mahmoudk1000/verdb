@@ -17,8 +17,8 @@ LIMIT 1;
 DELETE FROM projects
 WHERE name = $1;
 
--- name: GetAllProjects :many
-SELECT * FROM projects;
+-- name: ListAllProjects :many
+SELECT name FROM projects;
 
 -- name: CreateProjectVersion :one
 INSERT INTO project_versions (id, project_id, version, description, created_at)

@@ -100,39 +100,6 @@ func (q *Queries) DeleteProjectByName(ctx context.Context, name string) error {
 	return err
 }
 
-const getAllProjects = `-- name: GetAllProjects :many
-SELECT id, name, link, description, created_at FROM projects
-`
-
-func (q *Queries) GetAllProjects(ctx context.Context) ([]Project, error) {
-	rows, err := q.db.QueryContext(ctx, getAllProjects)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Project
-	for rows.Next() {
-		var i Project
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Link,
-			&i.Description,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getLatestProjectVersionByProjectName = `-- name: GetLatestProjectVersionByProjectName :one
 SELECT id, project_id, version, description, created_at FROM project_versions
   WHERE project_id = (
@@ -215,4 +182,31 @@ func (q *Queries) GetProjectByName(ctx context.Context, name string) (Project, e
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listAllProjects = `-- name: ListAllProjects :many
+SELECT name FROM projects
+`
+
+func (q *Queries) ListAllProjects(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listAllProjects)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
