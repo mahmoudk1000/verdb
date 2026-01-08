@@ -9,31 +9,35 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const checkApplicationExistsByName = `-- name: CheckApplicationExistsByName :one
 SELECT EXISTS (
-    SELECT 1 FROM applications WHERE name = $1
+    SELECT 1 FROM applications WHERE applications.name = $1 AND applications.project_id = (
+      SELECT id FROM projects WHERE projects.id = $2
+    )
 ) AS exists
 `
 
-func (q *Queries) CheckApplicationExistsByName(ctx context.Context, name string) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkApplicationExistsByName, name)
+type CheckApplicationExistsByNameParams struct {
+	Name string
+	ID   int32
+}
+
+func (q *Queries) CheckApplicationExistsByName(ctx context.Context, arg CheckApplicationExistsByNameParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkApplicationExistsByName, arg.Name, arg.ID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
 }
 
 const createApplication = `-- name: CreateApplication :one
-INSERT INTO applications (id, project_id, name, description, repo_url, created_at)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO applications (project_id, name, description, repo_url, created_at)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, project_id, name, description, repo_url, created_at
 `
 
 type CreateApplicationParams struct {
-	ID          uuid.UUID
 	ProjectID   int32
 	Name        string
 	Description sql.NullString
@@ -43,7 +47,6 @@ type CreateApplicationParams struct {
 
 func (q *Queries) CreateApplication(ctx context.Context, arg CreateApplicationParams) (Application, error) {
 	row := q.db.QueryRowContext(ctx, createApplication,
-		arg.ID,
 		arg.ProjectID,
 		arg.Name,
 		arg.Description,
@@ -62,24 +65,46 @@ func (q *Queries) CreateApplication(ctx context.Context, arg CreateApplicationPa
 	return i, err
 }
 
-const deleteApplicationByName = `-- name: DeleteApplicationByName :exec
+const deleteProjectApplicationByName = `-- name: DeleteProjectApplicationByName :one
 DELETE FROM applications
-WHERE name = $1
+WHERE applications.name = $1 AND project_id = (
+  SELECT id FROM projects WHERE projects.id = $2
+) RETURNING id, project_id, name, description, repo_url, created_at
 `
 
-func (q *Queries) DeleteApplicationByName(ctx context.Context, name string) error {
-	_, err := q.db.ExecContext(ctx, deleteApplicationByName, name)
-	return err
+type DeleteProjectApplicationByNameParams struct {
+	Name string
+	ID   int32
+}
+
+func (q *Queries) DeleteProjectApplicationByName(ctx context.Context, arg DeleteProjectApplicationByNameParams) (Application, error) {
+	row := q.db.QueryRowContext(ctx, deleteProjectApplicationByName, arg.Name, arg.ID)
+	var i Application
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Name,
+		&i.Description,
+		&i.RepoUrl,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getApplicationByName = `-- name: GetApplicationByName :one
 SELECT id, project_id, name, description, repo_url, created_at FROM applications
-WHERE name = $1
-LIMIT 1
+WHERE applications.name = $1 AND project_id = (
+  SELECT id FROM projects WHERE projects.id = $2
+) LIMIT 1
 `
 
-func (q *Queries) GetApplicationByName(ctx context.Context, name string) (Application, error) {
-	row := q.db.QueryRowContext(ctx, getApplicationByName, name)
+type GetApplicationByNameParams struct {
+	Name string
+	ID   int32
+}
+
+func (q *Queries) GetApplicationByName(ctx context.Context, arg GetApplicationByNameParams) (Application, error) {
+	row := q.db.QueryRowContext(ctx, getApplicationByName, arg.Name, arg.ID)
 	var i Application
 	err := row.Scan(
 		&i.ID,

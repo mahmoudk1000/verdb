@@ -7,12 +7,10 @@ package database
 import (
 	"database/sql"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Application struct {
-	ID          uuid.UUID
+	ID          int32
 	ProjectID   int32
 	Name        string
 	Description sql.NullString
@@ -21,8 +19,8 @@ type Application struct {
 }
 
 type ApplicationVersion struct {
-	ID            uuid.UUID
-	ApplicationID uuid.UUID
+	ID            int32
+	ApplicationID int32
 	Version       string
 	GitHash       sql.NullString
 	Description   sql.NullString
@@ -38,7 +36,7 @@ type Project struct {
 }
 
 type ProjectVersion struct {
-	ID          uuid.UUID
+	ID          int32
 	ProjectID   int32
 	Version     string
 	Description sql.NullString
@@ -46,7 +44,7 @@ type ProjectVersion struct {
 }
 
 type ProjectVersionApp struct {
-	ProjectVersionID     uuid.UUID
-	ApplicationID        uuid.UUID
-	ApplicationVersionID uuid.UUID
+	ProjectVersionID     int32
+	ApplicationID        int32
+	ApplicationVersionID int32
 }

@@ -29,7 +29,6 @@ func ToProject(p database.Project) Project {
 
 func ToProjects(ps []database.Project) []Project {
 	result := make([]Project, 0, len(ps))
-
 	for _, p := range ps {
 		result = append(result, ToProject(p))
 	}

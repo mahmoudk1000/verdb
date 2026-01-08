@@ -1,21 +1,26 @@
 -- name: CreateApplication :one
-INSERT INTO applications (id, project_id, name, description, repo_url, created_at)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO applications (project_id, name, description, repo_url, created_at)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: CheckApplicationExistsByName :one
 SELECT EXISTS (
-    SELECT 1 FROM applications WHERE name = $1
+    SELECT 1 FROM applications WHERE applications.name = $1 AND applications.project_id = (
+      SELECT id FROM projects WHERE projects.id = $2
+    )
 ) AS exists;
 
 -- name: GetApplicationByName :one
 SELECT * FROM applications
-WHERE name = $1
-LIMIT 1;
+WHERE applications.name = $1 AND project_id = (
+  SELECT id FROM projects WHERE projects.id = $2
+) LIMIT 1;
 
--- name: DeleteApplicationByName :exec
+-- name: DeleteProjectApplicationByName :one
 DELETE FROM applications
-WHERE name = $1;
+WHERE applications.name = $1 AND project_id = (
+  SELECT id FROM projects WHERE projects.id = $2
+) RETURNING *;
 
 -- name: ListAllProjectApplications :many
 SELECT * FROM applications

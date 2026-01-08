@@ -37,12 +37,8 @@ func NewCreateCommand() *cobra.Command {
 	create.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
 		ctx := cmd.Context()
-		err := createJSONProject(ctx, args[0], link, description, queries)
-		if err != nil {
-			return fmt.Errorf("failed to create project: %w", err)
-		}
-		fmt.Printf("Project '%s' was created\n", args[0])
-		return nil
+
+		return createJSONProject(ctx, args[0], link, description, queries)
 	}
 
 	return create

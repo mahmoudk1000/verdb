@@ -35,13 +35,7 @@ func NewDeleteCommand() *cobra.Command {
 			return nil
 		}
 
-		err := deleteProject(ctx, args[0], queries)
-		if err != nil {
-			return fmt.Errorf("failed to delete project: %w", err)
-		}
-		fmt.Printf("Project '%s' deleted successfully\n", args[0])
-
-		return nil
+		return deleteProject(ctx, args[0], queries)
 	}
 
 	return delete

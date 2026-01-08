@@ -35,16 +35,18 @@ func NewAddCommand() *cobra.Command {
 
 	add.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
-		ctx := cmd.Context()
 
+		ctx := cmd.Context()
 		linkFlag, _ := flags.GetString("link")
 		descFlag, _ := flags.GetString("description")
 
-		if err := addApplication(ctx, args[0], args[1], linkFlag, descFlag, queries); err != nil {
-			return err
-		}
-
-		return nil
+		return addApplication(ctx,
+			args[0],
+			args[1],
+			linkFlag,
+			descFlag,
+			queries,
+		)
 	}
 
 	return add
@@ -57,12 +59,15 @@ func addApplication(
 ) error {
 	pID, err := q.GetProjectIdByName(ctx, prjName)
 	if err != nil {
-		return err
+		return fmt.Errorf("project %q does not exist: %w", prjName, err)
 	}
 
-	exists, err := q.CheckApplicationExistsByName(ctx, appName)
+	exists, err := q.CheckApplicationExistsByName(ctx, database.CheckApplicationExistsByNameParams{
+		Name: prjName,
+		ID:   pID,
+	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed checking application existence: %w", err)
 	}
 	if exists {
 		return fmt.Errorf("application with name '%s' already exists", appName)
@@ -81,7 +86,7 @@ func addApplication(
 		},
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
-		return err
+		return fmt.Errorf("failed to create application: %w", err)
 	}
 
 	return nil

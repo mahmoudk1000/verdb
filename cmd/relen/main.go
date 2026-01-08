@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mahmoudk1000/relen/internal/cli/application"
+	"github.com/mahmoudk1000/relen/internal/cli/config"
 	"github.com/mahmoudk1000/relen/internal/cli/project"
 	"github.com/mahmoudk1000/relen/internal/db"
 )
@@ -28,6 +29,7 @@ var relen = &cobra.Command{
 func init() {
 	relen.AddCommand(project.NewProjectCommand())
 	relen.AddCommand(application.NewApplicationCommand())
+	relen.AddCommand(config.NewConfigCommand())
 }
 
 func main() {
@@ -39,10 +41,6 @@ func main() {
 
 	if err := db.Init(dbENV); err != nil {
 		fmt.Printf("Failed to initialize database: %v\n", err)
-		os.Exit(1)
-	}
-	if err := db.BuildSchema(); err != nil {
-		fmt.Printf("Failed to build database schema: %v\n", err)
 		os.Exit(1)
 	}
 	defer func() {

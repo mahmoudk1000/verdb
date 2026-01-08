@@ -9,8 +9,6 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const checkProjectExistsByName = `-- name: CheckProjectExistsByName :one
@@ -64,7 +62,7 @@ RETURNING id, project_id, version, description, created_at
 `
 
 type CreateProjectVersionParams struct {
-	ID          uuid.UUID
+	ID          int32
 	ProjectID   int32
 	Version     string
 	Description sql.NullString
