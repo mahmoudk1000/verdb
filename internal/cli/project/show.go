@@ -58,7 +58,6 @@ func NewShowCommand() *cobra.Command {
 		default:
 			fmtP, err = utils.Format(p)
 		}
-
 		if err != nil {
 			return err
 		}
