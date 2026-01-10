@@ -110,6 +110,18 @@ func (q *Queries) GetProjectIdByName(ctx context.Context, name string) (int32, e
 	return id, err
 }
 
+const getProjectStatusById = `-- name: GetProjectStatusById :one
+SELECT status FROM projects
+WHERE id = $1
+`
+
+func (q *Queries) GetProjectStatusById(ctx context.Context, id int32) (string, error) {
+	row := q.db.QueryRowContext(ctx, getProjectStatusById, id)
+	var status string
+	err := row.Scan(&status)
+	return status, err
+}
+
 const listAllProjects = `-- name: ListAllProjects :many
 SELECT id, name, status, link, description, metadata, created_at, updated_at FROM projects
 ORDER BY created_at DESC
@@ -255,4 +267,33 @@ type UpdateProjectStatusParams struct {
 func (q *Queries) UpdateProjectStatus(ctx context.Context, arg UpdateProjectStatusParams) error {
 	_, err := q.db.ExecContext(ctx, updateProjectStatus, arg.Name, arg.Status, arg.UpdatedAt)
 	return err
+}
+
+const updateProjectStatusById = `-- name: UpdateProjectStatusById :one
+UPDATE projects
+SET status = $2, updated_at = $3
+WHERE id = $1
+RETURNING id, name, status, link, description, metadata, created_at, updated_at
+`
+
+type UpdateProjectStatusByIdParams struct {
+	ID        int32
+	Status    string
+	UpdatedAt time.Time
+}
+
+func (q *Queries) UpdateProjectStatusById(ctx context.Context, arg UpdateProjectStatusByIdParams) (Project, error) {
+	row := q.db.QueryRowContext(ctx, updateProjectStatusById, arg.ID, arg.Status, arg.UpdatedAt)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Status,
+		&i.Link,
+		&i.Description,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

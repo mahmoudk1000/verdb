@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/mahmoudk1000/relen/internal/database"
@@ -22,11 +23,17 @@ type FProject struct {
 }
 
 func ToProject(p database.Project) Project {
+	var metadata map[string]any
+	if p.Metadata.Valid && len(p.Metadata.RawMessage) > 0 {
+		_ = json.Unmarshal(p.Metadata.RawMessage, &metadata)
+	}
+
 	return Project{
 		Name:        p.Name,
 		Status:      p.Status,
 		Link:        p.Link.String,
 		Description: p.Description.String,
+		Metadata:    metadata,
 		Created_At:  p.CreatedAt.Format(time.RFC1123),
 		Updated_At:  p.UpdatedAt.Format(time.RFC1123),
 	}

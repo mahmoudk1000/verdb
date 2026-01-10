@@ -40,6 +40,16 @@ WHERE name = $1;
 SELECT id FROM projects
 WHERE name = $1;
 
+-- name: GetProjectStatusById :one
+SELECT status FROM projects
+WHERE id = $1;
+
+-- name: UpdateProjectStatusById :one
+UPDATE projects
+SET status = $2, updated_at = $3
+WHERE id = $1
+RETURNING *;
+
 -- name: CheckProjectExistsByName :one
 SELECT EXISTS (
     SELECT 1 FROM projects WHERE name = $1
