@@ -12,16 +12,21 @@ import (
 	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
+type showOptions struct {
+	name string
+}
+
 func NewShowCommand() *cobra.Command {
+	opts := &showOptions{}
 	var queries *database.Queries
 
 	show := &cobra.Command{
-		Use:     "show <name>",
-		Aliases: []string{"s"},
-		Short:   "show details of a project",
-		Args:    cobra.ExactArgs(1),
+		Use:   "show <name>",
+		Short: "show details of a project",
+		Args:  cobra.ExactArgs(1),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			queries = db.Get()
+			opts.name = args[0]
 		},
 	}
 
@@ -41,11 +46,7 @@ func NewShowCommand() *cobra.Command {
 		jsonFlag, _ := flags.GetBool("json")
 		yamlFlag, _ := flags.GetBool("yaml")
 
-		p, err := showProject(
-			ctx,
-			args[0],
-			queries,
-		)
+		p, err := showProject(ctx, opts, queries)
 		if err != nil {
 			return err
 		}
@@ -72,18 +73,18 @@ func NewShowCommand() *cobra.Command {
 
 func showProject(
 	ctx context.Context,
-	name string,
+	opts *showOptions,
 	q *database.Queries,
 ) (models.Project, error) {
-	exists, err := q.CheckProjectExistsByName(ctx, name)
+	exists, err := q.CheckProjectExistsByName(ctx, opts.name)
 	if err != nil {
 		return models.Project{}, fmt.Errorf(checkProjectExistsErr, err)
 	}
 	if !exists {
-		return models.Project{}, fmt.Errorf(projectNotFoundErr, name)
+		return models.Project{}, fmt.Errorf(projectNotFoundErr, opts.name)
 	}
 
-	p, err := q.GetProjectByName(ctx, name)
+	p, err := q.GetProjectByName(ctx, opts.name)
 	if err != nil {
 		return models.Project{}, fmt.Errorf(failedToGetProjectErr, err)
 	}

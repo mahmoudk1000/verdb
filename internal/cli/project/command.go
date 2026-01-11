@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
+const (
 	projectNotFoundErr       = "project %q not found"
 	projectExistsErr         = "project with name %q already exists"
 	checkProjectExistsErr    = "failed to check if project exists: %w"
@@ -21,7 +21,7 @@ var (
 
 func NewProjectCommand() *cobra.Command {
 	project := &cobra.Command{
-		Use:     "project create|delete|list|show|describe|metadata",
+		Use:     "project create|delete|list|metadata|show|status",
 		Aliases: []string{"proj", "projects"},
 		Short:   "Manage projects",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -32,12 +32,14 @@ func NewProjectCommand() *cobra.Command {
 		},
 	}
 
-	project.AddCommand(NewCreateCommand())
-	project.AddCommand(NewDeleteCommand())
-	project.AddCommand(NewListCommand())
-	project.AddCommand(NewMetadataCommand())
-	project.AddCommand(NewShowCommand())
-	project.AddCommand(NewStatusCommand())
+	project.AddCommand(
+		NewCreateCommand(),
+		NewDeleteCommand(),
+		NewListCommand(),
+		NewMetadataCommand(),
+		NewShowCommand(),
+		NewStatusCommand(),
+	)
 
 	return project
 }

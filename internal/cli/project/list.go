@@ -12,7 +12,13 @@ import (
 	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
+type listOptions struct {
+	name  string
+	count int32
+}
+
 func NewListCommand() *cobra.Command {
+	opts := &listOptions{}
 	var queries *database.Queries
 
 	list := &cobra.Command{
@@ -22,13 +28,16 @@ func NewListCommand() *cobra.Command {
 		Short:   "List all projects",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			queries = db.Get()
+			if len(args) > 0 {
+				opts.name = args[0]
+			}
 		},
 	}
 
 	flags := list.Flags()
 	flags.Bool("json", false, "Output in JSON format")
 	flags.Bool("yaml", false, "Output in YAML format")
-	flags.Int32P("number", "n", 0, "Number of projects to list (0 for all)")
+	flags.Int32VarP(&opts.count, "count", "n", 0, "Number of projects to list (0 lists all)")
 
 	list.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
@@ -36,14 +45,8 @@ func NewListCommand() *cobra.Command {
 
 		jsonFlag, _ := flags.GetBool("json")
 		yamlFlag, _ := flags.GetBool("yaml")
-		count, _ := flags.GetInt32("number")
 
-		var pName string
-		if len(args) > 0 {
-			pName = args[0]
-		}
-
-		ps, err := listProjects(ctx, pName, count, queries)
+		ps, err := listProjects(ctx, opts, queries)
 		if err != nil {
 			return err
 		}
@@ -70,25 +73,24 @@ func NewListCommand() *cobra.Command {
 
 func listProjects(
 	ctx context.Context,
-	pName string,
-	c int32,
+	opts *listOptions,
 	q *database.Queries,
 ) ([]models.Project, error) {
 	var (
+		p   database.Project
 		ps  []database.Project
 		err error
 	)
 
 	switch {
-	case pName != "":
-		var p database.Project
-		p, err = q.GetProjectByName(ctx, pName)
+	case opts.name != "":
+		p, err = q.GetProjectByName(ctx, opts.name)
 		if err != nil {
 			return nil, fmt.Errorf(failedToGetProjectErr, err)
 		}
 		ps = []database.Project{p}
-	case c > 0:
-		ps, err = q.ListNProjects(ctx, c)
+	case opts.count > 0:
+		ps, err = q.ListNProjects(ctx, opts.count)
 	default:
 		ps, err = q.ListAllProjects(ctx)
 	}
