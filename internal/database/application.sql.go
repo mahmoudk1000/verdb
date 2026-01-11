@@ -16,7 +16,7 @@ import (
 const checkApplicationExistsByName = `-- name: CheckApplicationExistsByName :one
 SELECT EXISTS (
     SELECT 1 FROM applications
-    WHERE applications.name = $1 AND applications.project_id = $2
+    WHERE name = $1 AND project_id = $2
 ) AS exists
 `
 
@@ -77,7 +77,7 @@ func (q *Queries) CreateApplication(ctx context.Context, arg CreateApplicationPa
 
 const deleteProjectApplicationByName = `-- name: DeleteProjectApplicationByName :one
 DELETE FROM applications
-WHERE applications. name = $1 AND project_id = $2
+WHERE name = $1 AND project_id = $2
 RETURNING id, project_id, name, status, description, repo_url, metadata, created_at, updated_at
 `
 
@@ -127,7 +127,7 @@ func (q *Queries) GetApplicationById(ctx context.Context, id int32) (Application
 
 const getApplicationByName = `-- name: GetApplicationByName :one
 SELECT id, project_id, name, status, description, repo_url, metadata, created_at, updated_at FROM applications
-WHERE applications.name = $1 AND project_id = $2
+WHERE name = $1 AND project_id = $2
 LIMIT 1
 `
 
@@ -161,8 +161,8 @@ WHERE project_id = (
 ORDER BY name
 `
 
-func (q *Queries) ListAllProjectApplications(ctx context.Context, id int32) ([]Application, error) {
-	rows, err := q.db.QueryContext(ctx, listAllProjectApplications, id)
+func (q *Queries) ListAllProjectApplications(ctx context.Context, projectID int32) ([]Application, error) {
+	rows, err := q.db.QueryContext(ctx, listAllProjectApplications, projectID)
 	if err != nil {
 		return nil, err
 	}

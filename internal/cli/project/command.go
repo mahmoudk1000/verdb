@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	projectNotFoundErr = "project %q not found"
+)
+
 func NewProjectCommand() *cobra.Command {
 	project := &cobra.Command{
 		Use:     "project create|delete|list|show|describe|metadata",
@@ -23,6 +27,7 @@ func NewProjectCommand() *cobra.Command {
 	project.AddCommand(NewCreateCommand())
 	project.AddCommand(NewDeleteCommand())
 	project.AddCommand(NewListCommand())
+	project.AddCommand(NewMetadataCommand())
 	project.AddCommand(NewShowCommand())
 	project.AddCommand(NewStatusCommand())
 

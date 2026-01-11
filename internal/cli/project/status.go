@@ -75,7 +75,7 @@ func updateProjectStatus(ctx context.Context, pName string, s string, q *databas
 		return fmt.Errorf("project %s does not exist", pName)
 	}
 
-	if err := q.UpdateProjectStatus(ctx, database.UpdateProjectStatusParams{
+	if err := q.UpdateProjectStatusByName(ctx, database.UpdateProjectStatusByNameParams{
 		Name:      pName,
 		Status:    s,
 		UpdatedAt: time.Now().UTC(),

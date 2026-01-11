@@ -3,15 +3,13 @@ INSERT INTO projects (name, status, link, description, metadata, created_at, upd
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *;
 
--- name: UpdateProjectStatus :exec
-UPDATE projects
-SET status = $2, updated_at = $3
-WHERE name = $1;
-
 -- name: UpdateProjectMetadata :exec
 UPDATE projects
 SET metadata = $2, updated_at = $3
 WHERE name = $1;
+
+-- name: GetProjectMetadata :one
+SELECT metadata::text AS value FROM projects WHERE name = $1;
 
 -- name: GetProjectByName :one
 SELECT * FROM projects
@@ -44,11 +42,10 @@ WHERE name = $1;
 SELECT status FROM projects
 WHERE id = $1;
 
--- name: UpdateProjectStatusById :one
+-- name: UpdateProjectStatusByName :exec
 UPDATE projects
 SET status = $2, updated_at = $3
-WHERE id = $1
-RETURNING *;
+WHERE name = $1;
 
 -- name: CheckProjectExistsByName :one
 SELECT EXISTS (

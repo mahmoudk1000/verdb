@@ -70,3 +70,16 @@ func MetadataToJSON(metadata map[string]any) (pqtype.NullRawMessage, error) {
 		Valid:      true,
 	}, nil
 }
+
+func ReverseParseMetadata(rawMsg pqtype.NullRawMessage) (map[string]any, error) {
+	if !rawMsg.Valid {
+		return nil, nil
+	}
+
+	var metadata map[string]any
+	if err := json.Unmarshal(rawMsg.RawMessage, &metadata); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+	}
+
+	return metadata, nil
+}

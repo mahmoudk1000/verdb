@@ -110,6 +110,17 @@ func (q *Queries) GetProjectIdByName(ctx context.Context, name string) (int32, e
 	return id, err
 }
 
+const getProjectMetadata = `-- name: GetProjectMetadata :one
+SELECT metadata::text AS value FROM projects WHERE name = $1
+`
+
+func (q *Queries) GetProjectMetadata(ctx context.Context, name string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getProjectMetadata, name)
+	var value string
+	err := row.Scan(&value)
+	return value, err
+}
+
 const getProjectStatusById = `-- name: GetProjectStatusById :one
 SELECT status FROM projects
 WHERE id = $1
@@ -252,48 +263,19 @@ func (q *Queries) UpdateProjectMetadata(ctx context.Context, arg UpdateProjectMe
 	return err
 }
 
-const updateProjectStatus = `-- name: UpdateProjectStatus :exec
+const updateProjectStatusByName = `-- name: UpdateProjectStatusByName :exec
 UPDATE projects
 SET status = $2, updated_at = $3
 WHERE name = $1
 `
 
-type UpdateProjectStatusParams struct {
+type UpdateProjectStatusByNameParams struct {
 	Name      string
 	Status    string
 	UpdatedAt time.Time
 }
 
-func (q *Queries) UpdateProjectStatus(ctx context.Context, arg UpdateProjectStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateProjectStatus, arg.Name, arg.Status, arg.UpdatedAt)
+func (q *Queries) UpdateProjectStatusByName(ctx context.Context, arg UpdateProjectStatusByNameParams) error {
+	_, err := q.db.ExecContext(ctx, updateProjectStatusByName, arg.Name, arg.Status, arg.UpdatedAt)
 	return err
-}
-
-const updateProjectStatusById = `-- name: UpdateProjectStatusById :one
-UPDATE projects
-SET status = $2, updated_at = $3
-WHERE id = $1
-RETURNING id, name, status, link, description, metadata, created_at, updated_at
-`
-
-type UpdateProjectStatusByIdParams struct {
-	ID        int32
-	Status    string
-	UpdatedAt time.Time
-}
-
-func (q *Queries) UpdateProjectStatusById(ctx context.Context, arg UpdateProjectStatusByIdParams) (Project, error) {
-	row := q.db.QueryRowContext(ctx, updateProjectStatusById, arg.ID, arg.Status, arg.UpdatedAt)
-	var i Project
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Status,
-		&i.Link,
-		&i.Description,
-		&i.Metadata,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

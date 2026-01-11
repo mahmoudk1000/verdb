@@ -15,7 +15,7 @@ WHERE id = $1;
 
 -- name: GetApplicationByName :one
 SELECT * FROM applications
-WHERE applications.name = $1 AND project_id = $2
+WHERE name = $1 AND project_id = $2
 LIMIT 1;
 
 -- name: GetApplicationById :one
@@ -25,7 +25,7 @@ WHERE id = $1;
 -- name: ListAllProjectApplications :many
 SELECT * FROM applications
 WHERE project_id = (
-  SELECT id FROM projects WHERE projects.id = $1
+  SELECT id FROM projects WHERE projects.id = sqlc.arg(project_id)
 )
 ORDER BY name;
 
@@ -36,11 +36,11 @@ ORDER BY name;
 
 -- name: DeleteProjectApplicationByName :one
 DELETE FROM applications
-WHERE applications. name = $1 AND project_id = $2
+WHERE name = $1 AND project_id = $2
 RETURNING *;
 
 -- name: CheckApplicationExistsByName :one
 SELECT EXISTS (
     SELECT 1 FROM applications
-    WHERE applications.name = $1 AND applications.project_id = $2
+    WHERE name = $1 AND project_id = $2
 ) AS exists;
