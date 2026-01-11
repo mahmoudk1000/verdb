@@ -44,10 +44,10 @@ func NewDeleteCommand() *cobra.Command {
 func deleteProject(ctx context.Context, name string, q *database.Queries) error {
 	exists, err := q.CheckProjectExistsByName(ctx, name)
 	if err != nil {
-		return fmt.Errorf("failed to check if project exists: %w", err)
+		return fmt.Errorf(checkProjectExistsErr, err)
 	}
 	if !exists {
-		return fmt.Errorf("project '%s' does not exist", name)
+		return fmt.Errorf(projectNotFoundErr, name)
 	}
 
 	return q.DeleteProjectByName(ctx, name)

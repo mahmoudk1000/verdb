@@ -8,7 +8,15 @@ import (
 )
 
 var (
-	projectNotFoundErr = "project %q not found"
+	projectNotFoundErr       = "project %q not found"
+	projectExistsErr         = "project with name %q already exists"
+	checkProjectExistsErr    = "failed to check if project exists: %w"
+	failedToGetProjectErr    = "failed to get project: %w"
+	failedToCreateProjectErr = "failed to create project: %w"
+	failedToParseMetadataErr = "failed to parse metadata: %w"
+	keyNotFoundInMetadataErr = "key %q not found in metadata"
+	invalidFormatErr         = "invalid format: expected key=value, got %q"
+	keyCannotBeEmptyErr      = "key cannot be empty"
 )
 
 func NewProjectCommand() *cobra.Command {

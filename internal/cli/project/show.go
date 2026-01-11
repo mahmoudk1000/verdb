@@ -77,15 +77,15 @@ func showProject(
 ) (models.Project, error) {
 	exists, err := q.CheckProjectExistsByName(ctx, name)
 	if err != nil {
-		return models.Project{}, fmt.Errorf("failed to check if project exists: %w", err)
+		return models.Project{}, fmt.Errorf(checkProjectExistsErr, err)
 	}
 	if !exists {
-		return models.Project{}, fmt.Errorf("project '%s' does not exist", name)
+		return models.Project{}, fmt.Errorf(projectNotFoundErr, name)
 	}
 
 	p, err := q.GetProjectByName(ctx, name)
 	if err != nil {
-		return models.Project{}, fmt.Errorf("failed to get project: %w", err)
+		return models.Project{}, fmt.Errorf(failedToGetProjectErr, err)
 	}
 
 	return models.ToProject(p), nil

@@ -84,7 +84,7 @@ func listProjects(
 		var p database.Project
 		p, err = q.GetProjectByName(ctx, pName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get project by name: %w", err)
+			return nil, fmt.Errorf(failedToGetProjectErr, err)
 		}
 		ps = []database.Project{p}
 	case c > 0:

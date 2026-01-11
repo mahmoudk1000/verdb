@@ -46,7 +46,7 @@ func NewCreateCommand() *cobra.Command {
 
 		metadataMap, err := utils.ParseMetadata(metadata)
 		if err != nil {
-			return fmt.Errorf("failed to parse metadata: %w", err)
+			return fmt.Errorf(failedToParseMetadataErr, err)
 		}
 
 		metadataJSON, err := utils.MetadataToJSON(metadataMap)
@@ -68,10 +68,10 @@ func createJSONProject(
 ) error {
 	exists, err := q.CheckProjectExistsByName(ctx, name)
 	if err != nil {
-		return fmt.Errorf("failed to check if project exists: %w", err)
+		return fmt.Errorf(checkProjectExistsErr, err)
 	}
 	if exists {
-		return fmt.Errorf("project with name '%s' already exists", name)
+		return fmt.Errorf(projectExistsErr, name)
 	}
 
 	now := time.Now().UTC()
@@ -92,7 +92,7 @@ func createJSONProject(
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to create project: %w", err)
+		return fmt.Errorf(failedToCreateProjectErr, err)
 	}
 
 	return nil

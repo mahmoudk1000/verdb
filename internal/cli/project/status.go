@@ -72,7 +72,7 @@ func NewStatusCommand() *cobra.Command {
 
 func updateProjectStatus(ctx context.Context, pName string, s string, q *database.Queries) error {
 	if _, err := q.CheckProjectExistsByName(ctx, pName); err != nil {
-		return fmt.Errorf("project %s does not exist", pName)
+		return fmt.Errorf(projectNotFoundErr, pName)
 	}
 
 	if err := q.UpdateProjectStatusByName(ctx, database.UpdateProjectStatusByNameParams{
@@ -89,12 +89,12 @@ func updateProjectStatus(ctx context.Context, pName string, s string, q *databas
 func getProjectStatus(ctx context.Context, pName string, q *database.Queries) (string, error) {
 	pId, err := q.GetProjectIdByName(ctx, pName)
 	if err != nil {
-		return "", fmt.Errorf("project %s does not exist", pName)
+		return "", fmt.Errorf(projectNotFoundErr, pName)
 	}
 
 	s, err := q.GetProjectStatusById(ctx, pId)
 	if err != nil {
-		return "", fmt.Errorf("failed to retrieve project status: %w", err)
+		return "", fmt.Errorf(failedToGetProjectErr, err)
 	}
 
 	return s, nil

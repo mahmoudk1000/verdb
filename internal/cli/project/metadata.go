@@ -75,7 +75,7 @@ func getProjectMetadata(
 	var metadata map[string]any
 	if metadataStr != "" && metadataStr != "null" {
 		if err := json.Unmarshal([]byte(metadataStr), &metadata); err != nil {
-			return fmt.Errorf("failed to parse metadata: %w", err)
+			return fmt.Errorf(failedToParseMetadataErr, err)
 		}
 	}
 
@@ -86,7 +86,7 @@ func getProjectMetadata(
 	if key != "" {
 		value, exists := metadata[key]
 		if !exists {
-			return fmt.Errorf("key '%s' not found in metadata", key)
+			return fmt.Errorf(keyNotFoundInMetadataErr, key)
 		}
 
 		if asJSON {
@@ -129,14 +129,14 @@ func setProjectMetadata(
 ) error {
 	parts := strings.SplitN(keyValue, "=", 2)
 	if len(parts) != 2 {
-		return fmt.Errorf("invalid format: expected key=value, got '%s'", keyValue)
+		return fmt.Errorf(invalidFormatErr, keyValue)
 	}
 
 	key := strings.TrimSpace(parts[0])
 	value := strings.TrimSpace(parts[1])
 
 	if key == "" {
-		return fmt.Errorf("key cannot be empty")
+		return fmt.Errorf(keyCannotBeEmptyErr)
 	}
 
 	metadataStr, err := q.GetProjectMetadata(ctx, pName)
@@ -147,7 +147,7 @@ func setProjectMetadata(
 	var metadata map[string]any
 	if metadataStr != "" && metadataStr != "null" {
 		if err := json.Unmarshal([]byte(metadataStr), &metadata); err != nil {
-			return fmt.Errorf("failed to parse existing metadata: %w", err)
+			return fmt.Errorf(failedToParseMetadataErr, err)
 		}
 	}
 
