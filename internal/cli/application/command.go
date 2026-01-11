@@ -7,6 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	// Error message templates
+	projectNotFoundErr           = "project %q does not exist: %w"
+	applicationNotFoundErr       = "application %q not found"
+	applicationExistsErr         = "application with name %q already exists"
+	checkApplicationExistsErr    = "failed checking application existence: %w"
+	failedToCreateApplicationErr = "failed to create application: %w"
+	failedToDeleteApplicationErr = "failed to delete application: %w"
+	failedToListApplicationsErr  = "failed to list applications for project %q: %w"
+)
+
 func NewApplicationCommand() *cobra.Command {
 	application := &cobra.Command{
 		Use:     "application add|remove|list|show",

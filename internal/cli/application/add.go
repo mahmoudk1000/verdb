@@ -65,7 +65,7 @@ func addApplication(
 ) error {
 	pID, err := q.GetProjectIdByName(ctx, prjName)
 	if err != nil {
-		return fmt.Errorf("project %q does not exist: %w", prjName, err)
+		return fmt.Errorf(projectNotFoundErr, prjName, err)
 	}
 
 	exists, err := q.CheckApplicationExistsByName(ctx, database.CheckApplicationExistsByNameParams{
@@ -73,10 +73,10 @@ func addApplication(
 		ProjectID: pID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed checking application existence: %w", err)
+		return fmt.Errorf(checkApplicationExistsErr, err)
 	}
 	if exists {
-		return fmt.Errorf("application with name '%s' already exists", appName)
+		return fmt.Errorf(applicationExistsErr, appName)
 	}
 
 	if _, err := q.CreateApplication(ctx, database.CreateApplicationParams{
@@ -92,7 +92,7 @@ func addApplication(
 		},
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
-		return fmt.Errorf("failed to create application: %w", err)
+		return fmt.Errorf(failedToCreateApplicationErr, err)
 	}
 
 	return nil

@@ -44,11 +44,9 @@ func NewMetadataCommand() *cobra.Command {
 		}
 
 		if flagSet != "" {
-			// Set metadata
 			return setProjectMetadata(ctx, projectName, flagSet, queries)
 		}
 
-		// Get metadata
 		var key string
 		if len(args) > 1 {
 			key = args[1]
@@ -113,7 +111,6 @@ func getProjectMetadata(
 		}
 		fmt.Println(string(output))
 	} else {
-		// Normal format output
 		for k, v := range metadata {
 			fmt.Printf("%s: %v\n", k, v)
 		}

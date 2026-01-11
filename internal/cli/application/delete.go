@@ -55,7 +55,7 @@ func deleteApplication(ctx context.Context, pName, aName string, q *database.Que
 		Name: aName,
 		ProjectID: pId,
 	}); err != nil {
-		return fmt.Errorf("failed to delete application: %w", err)
+		return fmt.Errorf(failedToDeleteApplicationErr, err)
 	}
 
 	return err

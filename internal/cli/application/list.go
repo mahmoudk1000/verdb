@@ -75,12 +75,12 @@ func listApplications(
 ) ([]models.Application, error) {
 	pId, err := q.GetProjectIdByName(ctx, pName)
 	if err != nil {
-		return nil, fmt.Errorf("project %s not found: %w", pName, err)
+		return nil, fmt.Errorf(projectNotFoundErr, pName, err)
 	}
 
 	ps, err := q.ListAllProjectApplications(ctx, pId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list applications for project %s: %w", pName, err)
+		return nil, fmt.Errorf(failedToListApplicationsErr, pName, err)
 	}
 
 	return models.ToApplications(ps), nil
