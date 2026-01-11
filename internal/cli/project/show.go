@@ -1,3 +1,6 @@
+/*
+Copyright © 2026 mahmoudk1000 <mahmoudk1000@gmail.com>
+*/
 package project
 
 import (
@@ -9,7 +12,6 @@ import (
 	"github.com/mahmoudk1000/relen/internal/database"
 	"github.com/mahmoudk1000/relen/internal/db"
 	"github.com/mahmoudk1000/relen/internal/models"
-	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
 func NewShowCommand() *cobra.Command {
@@ -17,76 +19,51 @@ func NewShowCommand() *cobra.Command {
 
 	show := &cobra.Command{
 		Use:     "show <name>",
-		Aliases: []string{"s"},
-		Short:   "show details of a project",
+		Aliases: []string{"s", "describe", "get"},
+		Short:   "Show details of a project",
 		Args:    cobra.ExactArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			queries = db.Get()
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			return runShow(cmd.Context(), cmd, args[0], queries)
 		},
 	}
 
-	flags := show.Flags()
-	flags.Bool("json", false, "output in JSON format")
-	flags.Bool("yaml", false, "output in YAML format")
-
-	show.RunE = func(cmd *cobra.Command, args []string) error {
-		show.SilenceUsage = true
-		ctx := cmd.Context()
-
-		var (
-			fmtP string
-			err  error
-		)
-
-		jsonFlag, _ := flags.GetBool("json")
-		yamlFlag, _ := flags.GetBool("yaml")
-
-		p, err := showProject(
-			ctx,
-			args[0],
-			queries,
-		)
-		if err != nil {
-			return err
-		}
-
-		switch {
-		case jsonFlag:
-			fmtP, err = utils.FormatJSON(p)
-		case yamlFlag:
-			fmtP, err = utils.FormatYAML(p)
-		default:
-			fmtP, err = utils.Format(p)
-		}
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(fmtP)
-
-		return nil
-	}
+	addOutputFlags(show)
 
 	return show
 }
 
-func showProject(
+func runShow(
+	ctx context.Context,
+	cmd *cobra.Command,
+	projectName string,
+	q *database.Queries,
+) error {
+	project, err := getProjectByName(ctx, projectName, q)
+	if err != nil {
+		return err
+	}
+
+	return formatAndPrint(cmd, project)
+}
+
+func getProjectByName(
 	ctx context.Context,
 	name string,
 	q *database.Queries,
 ) (models.Project, error) {
-	exists, err := q.CheckProjectExistsByName(ctx, name)
-	if err != nil {
-		return models.Project{}, fmt.Errorf(checkProjectExistsErr, err)
-	}
-	if !exists {
-		return models.Project{}, fmt.Errorf(projectNotFoundErr, name)
+	if err := ensureProjectExists(ctx, name, q); err != nil {
+		return models.Project{}, err
 	}
 
-	p, err := q.GetProjectByName(ctx, name)
+	dbProject, err := q.GetProjectByName(ctx, name)
 	if err != nil {
 		return models.Project{}, fmt.Errorf(failedToGetProjectErr, err)
 	}
 
-	return models.ToProject(p), nil
+	return models.ToProject(dbProject), nil
 }

@@ -1,3 +1,6 @@
+/*
+Copyright © 2026 mahmoudk1000 <mahmoudk1000@gmail.com>
+*/
 package project
 
 import (
@@ -9,93 +12,155 @@ import (
 
 	"github.com/mahmoudk1000/relen/internal/database"
 	"github.com/mahmoudk1000/relen/internal/db"
-	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
+type statusOptions struct {
+	projectName string
+	newStatus   string
+	isUpdate    bool
+}
+
 func NewStatusCommand() *cobra.Command {
+	opts := &statusOptions{}
 	var queries *database.Queries
 
 	status := &cobra.Command{
-		Use:     "status",
+		Use:     "status <project-name> [new-status]",
 		Aliases: []string{"st"},
+		Short:   "Get or update project status",
 		Args:    cobra.RangeArgs(1, 2),
-		Short:   "Update project status",
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			queries = db.Get()
+			opts.projectName = args[0]
+
+			if len(args) == 2 {
+				opts.newStatus = args[1]
+				opts.isUpdate = true
+			}
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+
+			if opts.isUpdate {
+				return runStatusUpdate(cmd.Context(), cmd, opts, queries)
+			}
+			return runStatusGet(cmd.Context(), cmd, opts, queries)
 		},
 	}
 
-	flags := status.Flags()
-	flags.Bool("json", false, "Output in JSON format")
-	flags.BoolP("quiet", "q", false, "quiet mode, no output")
-
-	status.RunE = func(cmd *cobra.Command, args []string) error {
-		cmd.SilenceUsage = true
-		ctx := cmd.Context()
-
-		jsonFlag, _ := flags.GetBool("json")
-		quietFlag, _ := flags.GetBool("quiet")
-
-		if len(args) == 1 {
-			s, err := getProjectStatus(ctx, args[0], queries)
-			if err != nil {
-				return err
-			}
-			if !quietFlag {
-				if jsonFlag {
-					fmtS, err := utils.FormatJSON(struct {
-						Status string `json:"status"`
-					}{
-						Status: s,
-					})
-					if err != nil {
-						return err
-					}
-
-					fmt.Println(fmtS)
-					return nil
-				}
-
-				fmt.Println(s)
-				return nil
-			}
-		} else {
-			if err := updateProjectStatus(ctx, args[0], args[1], queries); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
+	addOutputFlags(status)
+	status.Flags().BoolP(flagQuiet, "q", false, "Quiet mode, no output")
 
 	return status
 }
 
-func updateProjectStatus(ctx context.Context, pName string, s string, q *database.Queries) error {
-	if _, err := q.CheckProjectExistsByName(ctx, pName); err != nil {
-		return fmt.Errorf(projectNotFoundErr, pName)
+func runStatusGet(
+	ctx context.Context,
+	cmd *cobra.Command,
+	opts *statusOptions,
+	q *database.Queries,
+) error {
+	status, err := getProjectStatus(ctx, opts.projectName, q)
+	if err != nil {
+		return err
 	}
 
-	if err := q.UpdateProjectStatusByName(ctx, database.UpdateProjectStatusByNameParams{
-		Name:      pName,
-		Status:    s,
-		UpdatedAt: time.Now().UTC(),
-	}); err != nil {
+	if isQuietMode(cmd) {
+		return nil
+	}
+
+	format, err := getOutputFormat(cmd)
+	if err != nil {
 		return err
+	}
+
+	if format == formatJSON {
+		output, err := formatOutput(struct {
+			ProjectName string `json:"project_name"`
+			Status      string `json:"status"`
+		}{
+			ProjectName: opts.projectName,
+			Status:      status,
+		}, formatJSON)
+		if err != nil {
+			return err
+		}
+		fmt.Println(output)
+	} else if format == formatYAML {
+		output, err := formatOutput(struct {
+			ProjectName string `yaml:"project_name"`
+			Status      string `yaml:"status"`
+		}{
+			ProjectName: opts.projectName,
+			Status:      status,
+		}, formatYAML)
+		if err != nil {
+			return err
+		}
+		fmt.Println(output)
+	} else {
+		fmt.Println(status)
 	}
 
 	return nil
 }
 
-func getProjectStatus(ctx context.Context, pName string, q *database.Queries) (string, error) {
-	pId, err := q.GetProjectIdByName(ctx, pName)
-	if err != nil {
-		return "", fmt.Errorf(projectNotFoundErr, pName)
+func runStatusUpdate(
+	ctx context.Context,
+	cmd *cobra.Command,
+	opts *statusOptions,
+	q *database.Queries,
+) error {
+	if err := updateProjectStatus(ctx, opts.projectName, opts.newStatus, q); err != nil {
+		return err
 	}
 
-	s, err := q.GetProjectStatusById(ctx, pId)
+	if !isQuietMode(cmd) {
+		fmt.Printf("Successfully updated status of project %q to %q\n",
+			opts.projectName, opts.newStatus)
+	}
+
+	return nil
+}
+
+func getProjectStatus(
+	ctx context.Context,
+	projectName string,
+	q *database.Queries,
+) (string, error) {
+	projectID, err := q.GetProjectIdByName(ctx, projectName)
+	if err != nil {
+		return "", fmt.Errorf(projectNotFoundErr, projectName)
+	}
+
+	status, err := q.GetProjectStatusById(ctx, projectID)
 	if err != nil {
 		return "", fmt.Errorf(failedToGetProjectErr, err)
 	}
 
-	return s, nil
+	return status, nil
+}
+
+func updateProjectStatus(
+	ctx context.Context,
+	projectName, newStatus string,
+	q *database.Queries,
+) error {
+	if err := ensureProjectExists(ctx, projectName, q); err != nil {
+		return err
+	}
+
+	params := database.UpdateProjectStatusByNameParams{
+		Name:      projectName,
+		Status:    newStatus,
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	if err := q.UpdateProjectStatusByName(ctx, params); err != nil {
+		return fmt.Errorf(failedToUpdateProjectErr, err)
+	}
+
+	return nil
 }

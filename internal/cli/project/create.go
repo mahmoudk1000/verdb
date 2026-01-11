@@ -1,3 +1,6 @@
+/*
+Copyright © 2026 mahmoudk1000 <mahmoudk1000@gmail.com>
+*/
 package project
 
 import (
@@ -14,84 +17,92 @@ import (
 	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
+type createOptions struct {
+	name        string
+	status      string
+	link        string
+	description string
+	metadata    []string
+}
+
 func NewCreateCommand() *cobra.Command {
-	var (
-		status      string
-		link        string
-		description string
-		metadata    []string
-		queries     *database.Queries
-	)
+	opts := &createOptions{}
+	var queries *database.Queries
 
 	create := &cobra.Command{
 		Use:     "create <name>",
 		Aliases: []string{"c", "new"},
-		Short:   "add a new application to the project",
+		Short:   "Create a new project",
 		Args:    cobra.ExactArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			queries = db.Get()
+			opts.name = args[0]
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			return runCreate(cmd.Context(), opts, queries)
 		},
 	}
 
 	flags := create.Flags()
 	flags.SortFlags = false
-	flags.StringVarP(&status, "status", "s", "active", "Project status")
-	flags.StringVarP(&link, "link", "l", "", "Project link")
-	flags.StringVarP(&description, "description", "d", "", "Project description")
-	flags.StringArrayVarP(&metadata, "metadata", "m", []string{}, "Metadata key=value pairs")
-
-	create.RunE = func(cmd *cobra.Command, args []string) error {
-		cmd.SilenceUsage = true
-		ctx := cmd.Context()
-
-		metadataMap, err := utils.ParseMetadata(metadata)
-		if err != nil {
-			return fmt.Errorf(failedToParseMetadataErr, err)
-		}
-
-		metadataJSON, err := utils.MetadataToJSON(metadataMap)
-		if err != nil {
-			return err
-		}
-
-		return createJSONProject(ctx, args[0], status, link, description, metadataJSON, queries)
-	}
+	flags.StringVarP(&opts.status, "status", "s", "active", "Project status")
+	flags.StringVarP(&opts.link, "link", "l", "", "Project link or URL")
+	flags.StringVarP(&opts.description, "description", "d", "", "Project description")
+	flags.StringArrayVarP(&opts.metadata, "metadata", "m", []string{},
+		"Metadata in key=value format (can be specified multiple times)")
 
 	return create
 }
 
-func createJSONProject(
+func runCreate(ctx context.Context, opts *createOptions, q *database.Queries) error {
+	if err := ensureProjectNotExists(ctx, opts.name, q); err != nil {
+		return err
+	}
+
+	metadataMap, err := utils.ParseMetadata(opts.metadata)
+	if err != nil {
+		return fmt.Errorf(failedToParseMetadataErr, err)
+	}
+
+	metadataJSON, err := utils.MetadataToJSON(metadataMap)
+	if err != nil {
+		return fmt.Errorf(failedToParseMetadataErr, err)
+	}
+
+	if err := createProject(ctx, opts, metadataJSON, q); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createProject(
 	ctx context.Context,
-	name, status, link, desc string,
-	md pqtype.NullRawMessage,
+	opts *createOptions,
+	metadata pqtype.NullRawMessage,
 	q *database.Queries,
 ) error {
-	exists, err := q.CheckProjectExistsByName(ctx, name)
-	if err != nil {
-		return fmt.Errorf(checkProjectExistsErr, err)
-	}
-	if exists {
-		return fmt.Errorf(projectExistsErr, name)
-	}
-
 	now := time.Now().UTC()
-	_, err = q.CreateProject(ctx, database.CreateProjectParams{
-		Name:   name,
-		Status: status,
+
+	params := database.CreateProjectParams{
+		Name:   opts.name,
+		Status: opts.status,
 		Link: sql.NullString{
-			String: link,
-			Valid:  link != "",
+			String: opts.link,
+			Valid:  opts.link != "",
 		},
 		Description: sql.NullString{
-			String: desc,
-			Valid:  desc != "",
+			String: opts.description,
+			Valid:  opts.description != "",
 		},
-		Metadata:  md,
+		Metadata:  metadata,
 		CreatedAt: now,
 		UpdatedAt: now,
-	})
+	}
 
-	if err != nil {
+	if _, err := q.CreateProject(ctx, params); err != nil {
 		return fmt.Errorf(failedToCreateProjectErr, err)
 	}
 

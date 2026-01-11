@@ -1,3 +1,6 @@
+/*
+Copyright © 2026 mahmoudk1000 <mahmoudk1000@gmail.com>
+*/
 package project
 
 import (
@@ -10,45 +13,57 @@ import (
 	"github.com/mahmoudk1000/relen/internal/db"
 )
 
+type deleteOptions struct {
+	projectName string
+	confirmed   bool
+}
+
 func NewDeleteCommand() *cobra.Command {
+	opts := &deleteOptions{}
 	var queries *database.Queries
 
 	delete := &cobra.Command{
 		Use:     "delete <project-name>",
-		Aliases: []string{"del", "rm"},
+		Aliases: []string{"del", "rm", "remove"},
 		Short:   "Delete a project",
 		Args:    cobra.ExactArgs(1),
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			queries = db.Get()
+			opts.projectName = args[0]
+
+			if !opts.confirmed {
+				return fmt.Errorf(
+					"deletion requires explicit confirmation: use --yes-i-am-sure flag",
+				)
+			}
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+			return runDelete(cmd.Context(), opts, queries)
 		},
 	}
 
 	flags := delete.Flags()
-	flags.Bool("yes-i-am-sure", false, "Confirm project deletion without prompting")
-
-	delete.RunE = func(cmd *cobra.Command, args []string) error {
-		cmd.SilenceUsage = true
-		ctx := cmd.Context()
-
-		if yes, _ := cmd.Flags().GetBool("yes-i-am-sure"); !yes {
-			fmt.Println("Please confirm project deletion with --yes-i-am-sure flag")
-			return nil
-		}
-
-		return deleteProject(ctx, args[0], queries)
-	}
+	flags.BoolVar(&opts.confirmed, "yes-i-am-sure", false,
+		"Confirm project deletion without prompting")
 
 	return delete
 }
 
-func deleteProject(ctx context.Context, name string, q *database.Queries) error {
-	exists, err := q.CheckProjectExistsByName(ctx, name)
-	if err != nil {
-		return fmt.Errorf(checkProjectExistsErr, err)
-	}
-	if !exists {
-		return fmt.Errorf(projectNotFoundErr, name)
+func runDelete(ctx context.Context, opts *deleteOptions, q *database.Queries) error {
+	if err := ensureProjectExists(ctx, opts.projectName, q); err != nil {
+		return err
 	}
 
-	return q.DeleteProjectByName(ctx, name)
+	return deleteProject(ctx, opts.projectName, q)
+}
+
+func deleteProject(ctx context.Context, name string, q *database.Queries) error {
+	if err := q.DeleteProjectByName(ctx, name); err != nil {
+		return fmt.Errorf(failedToDeleteProjectErr, err)
+	}
+
+	return nil
 }
