@@ -56,25 +56,24 @@ func NewStatusCommand() *cobra.Command {
 				return err
 			}
 
-			if !quietFlag {
-				var (
-					fmtS string
-					err  error
-				)
-				switch {
-				case jsonFlag:
-					fmtS, err = utils.FormatJSON(s)
-				case yamlFlag:
-					fmtS, err = utils.FormatYAML(s)
-				default:
-					fmtS, err = utils.Format(s)
-				}
-				if err != nil {
-					return err
-				}
-
-				fmt.Println(fmtS)
+			if quietFlag {
+				return nil
 			}
+
+			var fmtS string
+			switch {
+			case jsonFlag:
+				fmtS, err = utils.FormatJSON(s)
+			case yamlFlag:
+				fmtS, err = utils.FormatYAML(s)
+			default:
+				fmtS, err = utils.Format(s)
+			}
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(fmtS)
 
 			return nil
 		}
